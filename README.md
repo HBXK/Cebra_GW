@@ -440,7 +440,6 @@ plot_points_3d(samples[0], index=0, title="Example Surface Sample")
 - `compute_kernel_matrix` currently returns a distance matrix, not a kernel matrix.
 - `plot_points_3d` saves HTML output to a hardcoded local Windows path. Update this path before running elsewhere.
 - `extract_embeddings` depends on `CEBRAAnalysis`, but that import is commented out in the notebook.
-- `pairwise_cluster_mmd_tests` uses `combinations`, so make sure to import it:
 
 ```python
 from itertools import combinations

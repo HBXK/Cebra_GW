@@ -1,445 +1,176 @@
-# Cebra_GW
+# Stratified_GM
 
-Cebra_dim_R created by Deven Shidfar. 
-CEBRAAnalysis.run_analysis() extracts neural embeddings through CEBRA.
+The main implementation is contained in `stratified_gm.py`. The accompanying `Stratified_GW_demo.ipynb` notebook demonstrates the pipeline on synthetic geometric surfaces and CEBRA embeddings.
 
-## Installation
 
-Install the main dependencies:
+## Requirements
+
+- Python 3.10 or later
+- NumPy
+- SciPy
+- POT (Python Optimal Transport)
+- hdbscan
+- Matplotlib
+- umap-learn
+- Plotly
+- Jupyter, for running the demonstration notebook
+
+Install the dependencies with:
 
 ```bash
-pip install numpy scipy matplotlib plotly umap-learn hdbscan pot scikit-learn torch
+python -m pip install numpy scipy POT hdbscan matplotlib umap-learn plotly jupyter
 ```
 
-Optional/project-specific dependencies:
+The package imported as `ot` is installed from PyPI under the name `POT`.
+
+## Extracting CEBRA embeddings
+
+To extract embeddings from a MATLAB experiment file, import `CEBRAAnalysis` from `cebra_dim_reduction`, instantiate it with the data path and `session_choose=True`, and call `run_analysis` with the desired embedding output directory. The complete call can be written as `CEBRAAnalysis(data_path, session_choose=True).run_analysis(embedding_folder_path)`.
+
+
+## Basic usage
+
+Run the notebook from the repository root so that Python can find `stratified_gm.py`:
 
 ```bash
-pip install utonia
+jupyter notebook Stratified_GW_demo.ipynb
 ```
 
-Some parts of the notebook also refer to local paths and a `CEBRAAnalysis` class. Those may need to be adjusted before running on a new machine.
-
-## Basic Usage
-
-Import the functions from the file or run the notebook cells first.
+Alternatively, import the analysis function into another notebook or Python script:
 
 ```python
-import numpy as np
+from stratified_gm import run_analysis
 
-# Generate point-cloud samples
-samples = sample_four_surfaces(
-    N=10,
-    n=200,
-    random_rotate=True,
-    rng=42
-)
-
-print(samples.shape)
-# (40, 200, 3)
-```
-
-Each sample is a point cloud with shape:
-
-```python
-(n_points, 3)
-```
-
-The full dataset has shape:
-
-```python
-(n_clouds, n_points, 3)
-```
-
-## Main Functions
-
-### `sample_sphere_surface(N, n, d=3, rng=None)`
-
-Generates `N` point clouds sampled uniformly from the surface of a unit sphere.
-
-```python
-sphere_samples = sample_sphere_surface(N=5, n=100, rng=0)
-```
-
-Returns:
-
-```python
-shape = (N, n, d)
-```
-
-### `sample_torus_surface(N, n, R=2.0, r=1.0, rng=None)`
-
-Generates point clouds sampled from the surface of a torus in 3D.
-
-```python
-torus_samples = sample_torus_surface(
-    N=5,
-    n=100,
-    R=2.0,
-    r=0.5,
-    rng=0
-)
-```
-
-Arguments:
-
-- `R`: major radius
-- `r`: minor radius
-- Must satisfy `R > r > 0`
-
-Returns:
-
-```python
-shape = (N, n, 3)
-```
-
-### `sample_cube_surface(N, n, side_length=2.0, rng=None)`
-
-Generates point clouds sampled uniformly from the surface of a cube centered at the origin.
-
-```python
-cube_samples = sample_cube_surface(
-    N=5,
-    n=100,
-    side_length=2.0,
-    rng=0
-)
-```
-
-Returns:
-
-```python
-shape = (N, n, 3)
-```
-
-### `sample_tetrahedron_surface(N, n, side_length=2.0, rng=None)`
-
-Generates point clouds sampled from the surface of a regular tetrahedron.
-
-```python
-tetra_samples = sample_tetrahedron_surface(
-    N=5,
-    n=100,
-    side_length=2.0,
-    rng=0
-)
-```
-
-Returns:
-
-```python
-shape = (N, n, 3)
-```
-
-### `sample_three_surfaces(N, n, ...)`
-
-Generates point clouds from three geometric surfaces:
-
-1. sphere
-2. torus
-3. cube
-
-```python
-samples = sample_three_surfaces(
-    N=10,
-    n=200,
-    rng=42
-)
-```
-
-Returns:
-
-```python
-shape = (3 * N, n, 3)
-```
-
-The ordering is:
-
-```python
-samples[0:N]       # sphere
-samples[N:2*N]     # torus
-samples[2*N:3*N]   # cube
-```
-
-### `sample_four_surfaces(N, n, ..., random_rotate=True, rng=None)`
-
-Generates point clouds from four geometric surfaces:
-
-1. sphere
-2. torus
-3. cube
-4. tetrahedron
-
-```python
-samples = sample_four_surfaces(
-    N=10,
-    n=200,
-    random_rotate=True,
-    rng=42
-)
-```
-
-Returns:
-
-```python
-shape = (4 * N, n, 3)
-```
-
-If `random_rotate=True`, each point cloud is randomly rotated in 3D.
-
-### `apply_random_rotations(samples, rng=None)`
-
-Applies a different random 3D rotation to each point cloud.
-
-```python
-rotated_samples = apply_random_rotations(samples, rng=42)
-```
-
-Input:
-
-```python
-shape = (num_clouds, n_points, 3)
-```
-
-Output:
-
-```python
-shape = (num_clouds, n_points, 3)
-```
-
-## Distance and Kernel Functions
-
-### `geodesic_distance_matrix(points, eps=1e-12)`
-
-Projects points onto the unit sphere and computes the pairwise geodesic distance matrix.
-
-```python
-D = geodesic_distance_matrix(samples[0])
-```
-
-Returns:
-
-```python
-shape = (n_points, n_points)
-```
-
-Distances are measured in radians.
-
-### `compute_WassKernel_stratified_improved(data, n_quantile=100, metric='Euclidean', normalize=False)`
-
-Computes a pairwise distance matrix between point clouds using quantiles of internal point-cloud distances and optimal transport.
-
-```python
-D = compute_WassKernel_stratified_improved(
-    data=samples,
-    n_quantile=50,
+results = run_analysis(
+    point_clouds,
+    plot_path="results/validation_mmd.png",
+    validation_fraction=0.5,
+    n_quantile=100,
     metric="Euclidean",
-    normalize=False
-)
-```
-
-Arguments:
-
-- `data`: list or array of point clouds
-- `n_quantile`: number of quantile bins
-- `metric`: `"Euclidean"` or `"Geodesic"`
-- `normalize`: whether to normalize each distance matrix by its median
-
-Returns:
-
-```python
-shape = (n_clouds, n_clouds)
-```
-
-### `compute_kernel_matrix(data, normalize=False, n_align=100, metric='Euclidean', norm_const=100)`
-
-Wrapper around `compute_WassKernel_stratified_improved`.
-
-```python
-K = compute_kernel_matrix(
-    data=samples,
     normalize=False,
-    n_align=50,
-    metric="Euclidean"
-)
-```
-
-Despite the name, this currently returns a pairwise distance matrix.
-
-### `pairwise_hausdorff_distance_matrix(point_clouds, return_directed=False)`
-
-Computes the pairwise Hausdorff distance between point clouds.
-
-```python
-H = pairwise_hausdorff_distance_matrix(samples)
-```
-
-To also return directed Hausdorff distances:
-
-```python
-H, directed_H = pairwise_hausdorff_distance_matrix(
-    samples,
-    return_directed=True
-)
-```
-
-Returns:
-
-```python
-H.shape = (n_clouds, n_clouds)
-```
-
-## Clustering and Visualization
-
-### `cluster(D, min_cluster_size, min_samples)`
-
-Runs HDBSCAN clustering using a precomputed distance matrix.
-
-```python
-cluster_labels, cluster_indices = cluster(
-    D,
     min_cluster_size=5,
-    min_samples=2
+    min_samples=5,
+    n_permutations=10_000,
+    random_state=42,
 )
 ```
 
-Returns:
-
-- `cluster_labels`: unique cluster IDs
-- `cluster_indices`: dictionary mapping each cluster ID to sample indices
-
-Noise points are labeled `-1`.
-
-### `plot_umap_from_cluster_indices(data, cluster_labels, cluster_indices, ...)`
-
-Fits UMAP and plots the clustered data in 2D.
+`point_clouds` should be a collection of two-dimensional arrays:
 
 ```python
-embedding = plot_umap_from_cluster_indices(
-    data=D,
-    cluster_labels=cluster_labels,
-    cluster_indices=cluster_indices,
-    metric="precomputed",
-    title="UMAP of Point-Cloud Distances"
-)
+point_clouds = [
+    cloud_0,  # shape (n_points_0, n_features_0)
+    cloud_1,  # shape (n_points_1, n_features_1)
+    ...
+]
 ```
 
-Returns:
+Point clouds may contain different numbers of points. Each cloud must contain at least two points so that nonempty discovery and validation subsets can be formed.
+## Output
 
-```python
-embedding.shape = (n_samples, 2)
-```
-
-### `plot_points_3d(points, index, mode="markers", marker_size=4, show_axes=True, title="3D Points")`
-
-Displays a 3D point cloud using Plotly.
-
-```python
-fig = plot_points_3d(
-    samples[0],
-    index=0,
-    title="Example Point Cloud"
-)
-```
-
-This function also writes an HTML file to a hardcoded local path. You may want to replace that path before using it on another machine.
-
-## MMD Testing
-
-### `median_heuristic(X)`
-
-Estimates an RBF kernel bandwidth using the median pairwise squared distance.
-
-```python
-gamma = median_heuristic(X)
-```
-
-### `mmd_permutation_test(X, Y, n_permutations=1000, gamma=None, random_state=None)`
-
-Runs a two-sample MMD permutation test between two groups of data.
-
-```python
-mmd2, p_value = mmd_permutation_test(
-    X,
-    Y,
-    n_permutations=1000,
-    random_state=42
-)
-```
-
-Returns:
-
-- `mmd2`: observed MMD statistic
-- `p_value`: permutation-test p-value
-
-### `pairwise_cluster_mmd_tests(data, cluster_labels, n_permutations=1000, random_state=None)`
-
-Runs MMD tests between every pair of clusters.
-
-```python
-results = pairwise_cluster_mmd_tests(
-    data=embedding,
-    cluster_labels=labels,
-    n_permutations=1000,
-    random_state=42
-)
-```
-
-Returns a dictionary:
+`run_analysis` returns a dictionary keyed by pairs of HDBSCAN cluster labels:
 
 ```python
 {
-    (cluster_a, cluster_b): {
-        "mmd2": ...,
-        "p_value": ...,
-        "n_cluster_1": ...,
-        "n_cluster_2": ...
-    }
+    (0, 1): {
+        "mmd2": 0.2868,
+        "p_value": 0.0001,
+        "n_clouds_cluster_1": 20,
+        "n_clouds_cluster_2": 20,
+    },
+    (0, 2): {
+        "mmd2": 0.9614,
+        "p_value": 0.0001,
+        "n_clouds_cluster_1": 20,
+        "n_clouds_cluster_2": 20,
+    },
 }
 ```
 
-## Example Workflow
+The function also saves an annotated MMD² matrix to `plot_path`. Parent directories are created automatically when necessary.
 
-```python
-# 1. Generate synthetic geometric point clouds
-samples = sample_four_surfaces(
-    N=10,
-    n=200,
-    random_rotate=True,
-    rng=42
-)
+The reported p-values use the finite-permutation correction
 
-# 2. Compute pairwise point-cloud distances
-D = compute_kernel_matrix(
-    samples,
-    n_align=50,
-    metric="Euclidean"
-)
-
-# 3. Cluster using HDBSCAN
-cluster_labels, cluster_indices = cluster(
-    D,
-    min_cluster_size=5,
-    min_samples=2
-)
-
-# 4. Visualize with UMAP
-embedding = plot_umap_from_cluster_indices(
-    D,
-    cluster_labels,
-    cluster_indices,
-    metric="precomputed",
-    title="UMAP of Stratified Geometric Samples"
-)
-
-# 5. Plot one point cloud
-plot_points_3d(samples[0], index=0, title="Example Surface Sample")
+```text
+(number of permuted statistics >= observed statistic + 1)
+----------------------------------------------------------------
+                    (number of permutations + 1)
 ```
 
-## Notes / Known Issues
+Consequently, the smallest possible p-value is `1 / (n_permutations + 1)`.
 
-- `compute_kernel_matrix` currently returns a distance matrix, not a kernel matrix.
-- `plot_points_3d` saves HTML output to a hardcoded local Windows path. Update this path before running elsewhere.
-- `extract_embeddings` depends on `CEBRAAnalysis`, but that import is commented out in the notebook.
+## Main Functions
+
+| Function | Purpose |
+|---|---|
+| `split_point_clouds` | Randomly divides every cloud into non-overlapping discovery and validation sub-clouds. |
+| `geodesic_distance_matrix` | Computes pairwise angular distances after projecting points onto the unit sphere. |
+| `compute_stratified_wasserstein_distances` | Computes the pairwise optimal-transport distance matrix between point-cloud distance profiles. |
+| `cluster` | Runs HDBSCAN using a precomputed distance matrix and returns cluster labels and index groups. |
+| `distance_to_rbf_median` | Converts a distance matrix into an RBF kernel using the median positive distance as the bandwidth. |
+| `precomputed_kernel_permutation_test` | Performs a two-sample MMD permutation test using a precomputed kernel. |
+| `pairwise_cluster_mmd_precomputed` | Applies the MMD permutation test to every pair of clusters. |
+| `mmd_results_to_matrix` | Converts pairwise MMD² results into a symmetric matrix. |
+| `plot_pairwise_matrices` | Plots and optionally saves one or two annotated pairwise matrices. |
+| `run_analysis` | Runs the complete discovery-validation analysis pipeline. |
+
+
+## Distance construction
+
+For a point cloud \(X=\{x_1,\ldots,x_n\}\), the code first calculates its within-cloud distance matrix. Each point \(x_i\) is then represented by
+
+```text
+[Q_0(d(x_i, X)), Q_1/n_quantile(d(x_i, X)), ..., Q_1(d(x_i, X))],
+```
+
+where `Q` denotes an empirical quantile. The optimal transport cost between the resulting quantile-vector distributions defines the distance between two clouds. Uniform mass is assigned to every point in each cloud.
+
+This construction depends on within-cloud distances rather than the original coordinates. With the Euclidean metric it is therefore invariant to point ordering, translation, rotation, and reflection.
+
+Two within-cloud metrics are supported:
+
+- `metric="Euclidean"`: ordinary Euclidean distances.
+- `metric="Geodesic"`: angular distances after projection onto the unit sphere.
+
+When `normalize=True`, each within-cloud distance matrix is divided by its median before quantiles are calculated. This removes overall scale, but requires every cloud to have a strictly positive median distance.
+
+## Discovery-validation testing
+
+The MMD test is performed only on validation data. HDBSCAN labels are learned from the discovery sub-clouds and transferred by index to their matched validation sub-clouds; the validation clouds are not reclustered.
+
+The validation distance matrix is converted into a kernel using
+
+```text
+K[i, j] = exp(-D[i, j]² / (2 sigma²)),
+```
+
+## Demonstration notebook
+
+`Stratified_GW_demo.ipynb` contains two examples:
+
+1. Synthetic point clouds sampled from sphere, torus, cube, and tetrahedron surfaces, optionally subjected to independent random rotations.
+2. Collections of sub-clouds sampled from CEBRA time and behavior embeddings (obtained from the CEBRA documentation) stored as NumPy arrays.
+
+The CEBRA example expects files with names such as:
+
+```text
+Consistency_test_data/time3_embedding_values_rat_0.npy
+Consistency_test_data/posdir3_embedding_values_rat_0.npy
+```
+
+through rat index `3`. These data files are not required for the synthetic demonstration.
+
+## Reproducibility
+
+Set `random_state` in `run_analysis` to reproduce the discovery-validation split and the permutation tests:
 
 ```python
-from itertools import combinations
+results = run_analysis(
+    point_clouds,
+    plot_path="results/mmd.png",
+    random_state=42,
+)
+```
+
+
+

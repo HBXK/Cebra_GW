@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cebra-stratified-gm"
+version = "0.1.0"
+description = "Stratified Wasserstein point-cloud clustering and CEBRA embedding analysis"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Henri Klinteback, Deven Shidfar, Khanh Dao Duc, Manu Madhav, Lior Silberman" }
+]
+keywords = [
+    "CEBRA",
+    "point clouds",
+    "optimal transport",
+    "Wasserstein distance",
+    "MMD",
+    "HDBSCAN",
+]
+
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "plotly",
+    "POT",
+    "hdbscan",
+    "umap-learn",
+    "scikit-learn",
+    "pandas",
+    "cebra",
+]
+
+[project.optional-dependencies]
+dev = [
+    "build",
+    "twine",
+    "pytest",
+    "ruff",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cebra_stratified_gm"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src",
+    "README.md",
+    "pyproject.toml",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,6 +1,6 @@
-# Stratified_GM
+# Stratified_GW
 
-The main implementation is contained in `stratified_gm.py`. The accompanying `Stratified_GW_demo.ipynb` notebook demonstrates the pipeline on synthetic geometric surfaces and CEBRA embeddings.
+The main implementation is contained in `stratified_gw.py`. The accompanying `Stratified_GW_demo.ipynb` notebook demonstrates the pipeline on synthetic geometric surfaces and CEBRA embeddings.
 
 
 ## Requirements
@@ -30,7 +30,7 @@ To extract embeddings from a MATLAB experiment file, import `CEBRAAnalysis` from
 
 ## Basic usage
 
-Run the notebook from the repository root so that Python can find `stratified_gm.py`:
+Run the notebook from the repository root so that Python can find `stratified_gw.py`:
 
 ```bash
 jupyter notebook Stratified_GW_demo.ipynb
@@ -39,7 +39,7 @@ jupyter notebook Stratified_GW_demo.ipynb
 Alternatively, import the analysis function into another notebook or Python script:
 
 ```python
-from stratified_gm import run_analysis
+from stratified_gw import run_analysis
 
 results = run_analysis(
     point_clouds,

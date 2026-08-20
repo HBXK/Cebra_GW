@@ -7,7 +7,7 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
-import Cebra_GW.stratified_gm as sgm
+import swirl.stratified_gw as sgm
 
 
 def test_run_analysis_uses_discovery_and_validation_correctly(

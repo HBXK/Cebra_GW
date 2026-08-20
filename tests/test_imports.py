@@ -1,7 +1,10 @@
 def test_public_imports():
-    from Cebra_GW.stratified_gm import (
+    from swirl.cebra_dim_reduction import (
         CEBRAAnalysis,
         CEBRAUtils,
+    )
+    from swirl.stratified_gw import (
+
         run_analysis,
         split_point_clouds,
     )

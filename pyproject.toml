@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "cebra-stratified-gm"
+name = "cebra-stratified-gw"
 version = "0.1.0"
 description = "Stratified Wasserstein point-cloud clustering and CEBRA embedding analysis"
 readme = "README.md"

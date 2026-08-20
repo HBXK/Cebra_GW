@@ -42,7 +42,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/cebra_stratified_gm"]
+packages = ["src/swirl"]
 
 [tool.hatch.build.targets.sdist]
 include = [

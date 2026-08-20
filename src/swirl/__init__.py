@@ -1,5 +1,5 @@
 from .cebra_dim_reduction import CEBRAAnalysis, CEBRAUtils
-from .stratified_gm import (
+from .stratified_gw import (
     compute_stratified_wasserstein_distances,
     distance_to_rbf_median,
     cluster,
